@@ -1,5 +1,8 @@
 package ch.x42.terye.oak.mk.test.fixtures;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
@@ -12,8 +15,8 @@ public class HBaseMKTestFixture implements MicroKernelTestFixture {
     private static final String HBASE_ZOOKEEPER_QUORUM = "localhost";
 
     private Configuration config;
-    // keep track of one of the created microkernels
-    private HBaseMicroKernel mk;
+    // keep track of the created microkernels
+    private Set<HBaseMicroKernel> mks = new HashSet<HBaseMicroKernel>();
 
     public HBaseMKTestFixture() {
         config = HBaseConfiguration.create();
@@ -22,8 +25,10 @@ public class HBaseMKTestFixture implements MicroKernelTestFixture {
 
     @Override
     public MicroKernel createMicroKernel() throws Exception {
+        config.set("hbase.zookeeper.quorum", HBASE_ZOOKEEPER_QUORUM);
         HBaseAdmin admin = new HBaseAdmin(config);
-        mk = new HBaseMicroKernel(admin);
+        HBaseMicroKernel mk = new HBaseMicroKernel(admin);
+        mks.add(mk);
         return mk;
     }
 
@@ -34,12 +39,18 @@ public class HBaseMKTestFixture implements MicroKernelTestFixture {
 
     @Override
     public void tearDownAfterTest() throws Exception {
-        // this drops all tables, closes the HTable and HBaseAdmin instances (we
-        // only need to do this once since all microkernels share the same
-        // resources)
-        if (mk != null) {
-            mk.dispose(true);
+        // dispose of microkernels
+        HBaseMicroKernel any = null;
+        for (HBaseMicroKernel mk : mks) {
+            if (any == null) {
+                any = mk;
+            } else {
+                mk.dispose();
+            }
         }
+        // call this method only once in order to drop all tables and close all
+        // HBase resources (which are shared among the instances)
+        any.dispose(true, true);
     }
 
     @Override
