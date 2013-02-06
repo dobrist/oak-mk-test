@@ -16,18 +16,22 @@ public class HBaseMKTestFixture implements MicroKernelTestFixture {
 
     private Configuration config;
     // keep track of the created microkernels
-    private Set<HBaseMicroKernel> mks = new HashSet<HBaseMicroKernel>();
+    private Set<HBaseMicroKernel> mks;
+    // counter for explicit machine ids
+    private int counter;
 
     public HBaseMKTestFixture() {
         config = HBaseConfiguration.create();
         config.set("hbase.zookeeper.quorum", HBASE_ZOOKEEPER_QUORUM);
+        mks = new HashSet<HBaseMicroKernel>();
+        counter = 0;
     }
 
     @Override
     public MicroKernel createMicroKernel() throws Exception {
         config.set("hbase.zookeeper.quorum", HBASE_ZOOKEEPER_QUORUM);
         HBaseAdmin admin = new HBaseAdmin(config);
-        HBaseMicroKernel mk = new HBaseMicroKernel(admin);
+        HBaseMicroKernel mk = new HBaseMicroKernel(admin, counter++);
         mks.add(mk);
         return mk;
     }
