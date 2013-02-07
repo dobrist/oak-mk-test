@@ -13,7 +13,7 @@ import org.apache.jackrabbit.oak.commons.PathUtils;
  */
 public class TreeCommitter implements Callable<String> {
 
-    private static final String NODE_PREFIX = "node_";
+    public static final String NODE_PREFIX = "node_";
 
     private MicroKernel mk;
     private String root;
@@ -51,16 +51,16 @@ public class TreeCommitter implements Callable<String> {
             int nbNodes = (int) Math.pow(branchingFactor, i);
             // loop through all nodes on this level
             for (int j = 0; j < nbNodes; j++) {
-                if (batchCount == rate) {
-                    // commit batch
-                    revisionId = mk.commit("/", batch, null, "");
-                    batch = "";
-                    batchCount = 0;
-                }
                 // add new statement to batch for later commit
                 String abs = generatePath(i, j);
                 batch += "+\"" + PathUtils.relativize("/", abs) + "\":{} ";
                 batchCount++;
+                // commit batch
+                if (batchCount == rate) {
+                    revisionId = mk.commit("/", batch, null, "");
+                    batch = "";
+                    batchCount = 0;
+                }
             }
         }
         // commit remaining statements, if any
