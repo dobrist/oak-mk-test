@@ -51,9 +51,9 @@ public class HBaseMKTestFixture implements MicroKernelTestFixture {
                 mk.dispose();
             }
         }
-        // call this method only once in order to drop all tables and close all
-        // HBase resources (which are shared among the instances)
-        any.dispose(true, true);
+        // call this method only once in order to drop all tables
+        any.dispose(true);
+        // clear list so that the microkernels can be gc'd
         mks.clear();
     }
 
