@@ -29,7 +29,6 @@ public class HBaseMKTestFixture implements MicroKernelTestFixture {
 
     @Override
     public MicroKernel createMicroKernel() throws Exception {
-        config.set("hbase.zookeeper.quorum", HBASE_ZOOKEEPER_QUORUM);
         HBaseAdmin admin = new HBaseAdmin(config);
         HBaseMicroKernel mk = new HBaseMicroKernel(admin, counter++);
         mks.add(mk);
@@ -55,6 +54,7 @@ public class HBaseMKTestFixture implements MicroKernelTestFixture {
         // call this method only once in order to drop all tables and close all
         // HBase resources (which are shared among the instances)
         any.dispose(true, true);
+        mks.clear();
     }
 
     @Override
