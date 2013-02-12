@@ -27,7 +27,7 @@ public class MicroKernelConcurrentAddTest extends MicroKernelPerformanceTest {
     private static final int NB_THREADS = Runtime.getRuntime()
             .availableProcessors();
     private static final int TREE_HEIGHT = 5;
-    private static final int TREE_BRANCHING_FACTOR = 6;
+    private static final int TREE_BRANCHING_FACTOR = 8;
     private static final int COMMIT_RATE = 500;
 
     public List<Callable<String>> workers;
