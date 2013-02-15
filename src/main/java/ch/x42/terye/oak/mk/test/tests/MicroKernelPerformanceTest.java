@@ -4,7 +4,6 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.apache.jackrabbit.mk.api.MicroKernel;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.runner.RunWith;
@@ -36,18 +35,15 @@ public abstract class MicroKernelPerformanceTest {
 
     protected final Logger logger = LoggerFactory.getLogger(getClass());
 
-    private MicroKernelTestFixture fixture;
+    protected MicroKernelTestFixture fixture;
 
     protected MicroKernelPerformanceTest(MicroKernelTestFixture fixture) {
         this.fixture = fixture;
     }
 
-    protected MicroKernel createMicroKernel() throws Exception {
-        return fixture.createMicroKernel();
-    }
-
     @Before
     public final void setUp() throws Exception {
+        System.gc();
         logger.debug("Calling test setup fixture method");
         fixture.setUpBeforeTest();
     }

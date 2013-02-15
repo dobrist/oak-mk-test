@@ -36,13 +36,20 @@ public class HBaseMKTestFixture implements MicroKernelTestFixture {
     }
 
     @Override
+    public void disposeMicroKernel(MicroKernel mk) throws Exception {
+        if (mks.remove(mk)) {
+            ((HBaseMicroKernel) mk).dispose();
+        }
+    }
+
+    @Override
     public void setUpBeforeTest() throws Exception {
         // nothing to do, we assume the database is empty
     }
 
     @Override
     public void tearDownAfterTest() throws Exception {
-        // dispose of microkernels
+        // dispose of remaining microkernels
         HBaseMicroKernel any = null;
         for (HBaseMicroKernel mk : mks) {
             if (any == null) {
@@ -51,7 +58,7 @@ public class HBaseMKTestFixture implements MicroKernelTestFixture {
                 mk.dispose();
             }
         }
-        // call this method only once in order to drop all tables
+        // drop all tables using any of the microkernels
         any.dispose(true);
         // clear list so that the microkernels can be gc'd
         mks.clear();

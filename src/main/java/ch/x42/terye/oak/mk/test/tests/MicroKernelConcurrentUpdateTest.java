@@ -12,7 +12,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.jackrabbit.mk.api.MicroKernel;
 import org.apache.jackrabbit.oak.commons.PathUtils;
-import org.junit.After;
 import org.junit.Before;
 
 import ch.x42.terye.oak.mk.test.PerformanceTest;
@@ -50,10 +49,11 @@ public class MicroKernelConcurrentUpdateTest extends MicroKernelPerformanceTest 
         logger.debug("Creating initial tree");
 
         // commit initial tree
-        MicroKernel mk = createMicroKernel();
+        MicroKernel mk = fixture.createMicroKernel();
         TreeCommitter committer = new TreeCommitter(mk, "/", TREE_HEIGHT,
                 NB_THREADS, 1000);
         committer.call();
+        fixture.disposeMicroKernel(mk);
 
         // create workers
         logger.debug("Creating workers");
@@ -61,7 +61,7 @@ public class MicroKernelConcurrentUpdateTest extends MicroKernelPerformanceTest 
         workers = new LinkedList<Callable<String>>();
         for (int i = 0; i < NB_THREADS; i++) {
             // create worker
-            mk = createMicroKernel();
+            mk = fixture.createMicroKernel();
             Callable<String> worker = new RandomTreeUpdater(mk, i);
             workers.add(worker);
         }
@@ -84,12 +84,6 @@ public class MicroKernelConcurrentUpdateTest extends MicroKernelPerformanceTest 
             future.get();
         }
         logger.debug("All workers are done");
-    }
-
-    @After
-    public void tearDownTest() {
-        workers = null;
-        System.gc();
     }
 
     private class RandomTreeUpdater implements Callable<String> {

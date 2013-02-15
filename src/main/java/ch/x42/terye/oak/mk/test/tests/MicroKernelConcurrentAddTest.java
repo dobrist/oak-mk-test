@@ -9,7 +9,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.jackrabbit.mk.api.MicroKernel;
-import org.junit.After;
 import org.junit.Before;
 
 import ch.x42.terye.oak.mk.test.PerformanceTest;
@@ -50,7 +49,7 @@ public class MicroKernelConcurrentAddTest extends MicroKernelPerformanceTest {
         // create workers
         workers = new LinkedList<Callable<String>>();
         for (int i = 0; i < NB_THREADS; i++) {
-            MicroKernel mk = createMicroKernel();
+            MicroKernel mk = fixture.createMicroKernel();
             // commit the root nodes of the trees
             String node = "node_" + i;
             mk.commit("/", "+\"" + node + "\":{}", null, "");
@@ -78,12 +77,6 @@ public class MicroKernelConcurrentAddTest extends MicroKernelPerformanceTest {
             future.get();
         }
         logger.debug("All workers are done");
-    }
-
-    @After
-    public void tearDownTest() {
-        workers = null;
-        System.gc();
     }
 
 }

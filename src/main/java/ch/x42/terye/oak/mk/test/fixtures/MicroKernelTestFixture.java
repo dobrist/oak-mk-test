@@ -10,8 +10,14 @@ public interface MicroKernelTestFixture {
 
     public MicroKernel createMicroKernel() throws Exception;
 
+    public void disposeMicroKernel(MicroKernel mk) throws Exception;
+
     public void setUpBeforeTest() throws Exception;
 
+    /**
+     * This method must dispose of all microkernels created by this fixture that
+     * have not explicitely been disposed of.
+     */
     public void tearDownAfterTest() throws Exception;
 
 }
