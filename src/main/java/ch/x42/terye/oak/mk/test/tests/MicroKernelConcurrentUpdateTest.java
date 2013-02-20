@@ -62,7 +62,7 @@ public class MicroKernelConcurrentUpdateTest extends MicroKernelPerformanceTest 
         for (int i = 0; i < NB_THREADS; i++) {
             // create worker
             mk = fixture.createMicroKernel();
-            Callable<String> worker = new RandomTreeUpdater(mk, i);
+            Callable<String> worker = new Updater(mk, i);
             workers.add(worker);
         }
     }
@@ -86,20 +86,18 @@ public class MicroKernelConcurrentUpdateTest extends MicroKernelPerformanceTest 
         logger.debug("All workers are done");
     }
 
-    private class RandomTreeUpdater implements Callable<String> {
+    private class Updater implements Callable<String> {
 
         private MicroKernel mk;
         private int preferred;
         private Random random;
 
         /**
-         * Constructor.
-         * 
          * @param mk the microkernel used to commit
-         * @param preferred the index of the root's child to be used as the root
-         *            of the preferred subtree
+         * @param preferred the index of the root's child to be used as the
+         *            preferred subtree to be updated
          */
-        public RandomTreeUpdater(MicroKernel mk, int preferred) {
+        public Updater(MicroKernel mk, int preferred) {
             this.mk = mk;
             this.preferred = preferred;
             this.random = new Random(hashCode());
@@ -112,9 +110,10 @@ public class MicroKernelConcurrentUpdateTest extends MicroKernelPerformanceTest 
             int batchCount = 0;
             for (int i = 0; i <= NB_UPDATES; i++) {
                 // generate statement
-                // updated the preferred subtree
+                // update the preferred subtree
                 int index = preferred;
-                if (random.nextDouble() >= PCT_LOCAL_UPDATES) {
+                if (TREE_BRANCHING_FACTOR > 1
+                        && random.nextDouble() >= PCT_LOCAL_UPDATES) {
                     // update any other subtree
                     while (index == preferred) {
                         index = random.nextInt(NB_THREADS);
