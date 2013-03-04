@@ -26,9 +26,9 @@ public class MicroKernelConcurrentUpdateTest extends MicroKernelPerformanceTest 
     private static final int NB_THREADS = Runtime.getRuntime()
             .availableProcessors();
     private static final int TREE_HEIGHT = 5;
-    private static final int TREE_BRANCHING_FACTOR = NB_THREADS;
+    private static final int TREE_BRANCHING_FACTOR = 7;
     // number of updates to be performed by each thread
-    private static final int NB_UPDATES = 5000;
+    private static final int NB_UPDATES = 10000;
     // percentage of updates to the preferred subtree
     private static final double PCT_LOCAL_UPDATES = 0.8;
     // percentage of adding nodes as opposed to setting properties
@@ -50,14 +50,19 @@ public class MicroKernelConcurrentUpdateTest extends MicroKernelPerformanceTest 
 
         // commit initial tree
         MicroKernel mk = fixture.createMicroKernel();
-        TreeCommitter committer = new TreeCommitter(mk, "/", TREE_HEIGHT,
-                NB_THREADS, 1000);
-        committer.call();
+        for (int i = 0; i < NB_THREADS; i++) {
+            // commit the root nodes of the subtrees
+            String node = "node_" + i;
+            mk.commit("/", "+\"" + node + "\":{}", null, "");
+            TreeCommitter committer = new TreeCommitter(mk, "/" + node,
+                    TREE_HEIGHT, TREE_BRANCHING_FACTOR, 1000);
+            committer.call();
+        }
         fixture.disposeMicroKernel(mk);
 
         // create workers
         logger.debug("Creating workers");
-        counter = new AtomicInteger(NB_THREADS);
+        counter = new AtomicInteger(TREE_BRANCHING_FACTOR);
         workers = new LinkedList<Callable<String>>();
         for (int i = 0; i < NB_THREADS; i++) {
             // create worker
@@ -67,7 +72,7 @@ public class MicroKernelConcurrentUpdateTest extends MicroKernelPerformanceTest 
         }
     }
 
-    @PerformanceTest(nbWarmupRuns = 3, nbRuns = 3)
+    @PerformanceTest(nbWarmupRuns = 2, nbRuns = 3)
     public void test() throws Exception {
         // run them
         logger.debug("Starting concurrent worker execution");
@@ -112,8 +117,7 @@ public class MicroKernelConcurrentUpdateTest extends MicroKernelPerformanceTest 
                 // generate statement
                 // update the preferred subtree
                 int index = preferred;
-                if (TREE_BRANCHING_FACTOR > 1
-                        && random.nextDouble() >= PCT_LOCAL_UPDATES) {
+                if (NB_THREADS > 1 && random.nextDouble() >= PCT_LOCAL_UPDATES) {
                     // update any other subtree
                     while (index == preferred) {
                         index = random.nextInt(NB_THREADS);
