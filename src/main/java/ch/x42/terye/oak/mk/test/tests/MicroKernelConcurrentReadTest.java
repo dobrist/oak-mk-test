@@ -24,11 +24,11 @@ public class MicroKernelConcurrentReadTest extends MicroKernelPerformanceTest {
     private static final int NB_THREADS = Runtime.getRuntime()
             .availableProcessors();
     private static final int TREE_HEIGHT = 5;
-    private static final int TREE_BRANCHING_FACTOR = NB_THREADS;
+    private static final int TREE_BRANCHING_FACTOR = 6;
     // number of read operations to be performed by each thread
     private static final int NB_READS = 5000;
     // percentage of read operations from the preferred subtree
-    private static final double PCT_LOCAL_UPDATES = 0.8;
+    private static final double PCT_LOCAL_READS = 0.8;
 
     public List<Callable<String>> workers;
 
@@ -42,11 +42,16 @@ public class MicroKernelConcurrentReadTest extends MicroKernelPerformanceTest {
         logger.debug("Number of threads: " + NB_THREADS);
         logger.debug("Creating initial tree");
 
-        // commit tree
+        // commit initial tree
         MicroKernel mk = fixture.createMicroKernel();
-        TreeCommitter committer = new TreeCommitter(mk, "/", TREE_HEIGHT,
-                TREE_BRANCHING_FACTOR, 1000);
-        committer.call();
+        for (int i = 0; i < NB_THREADS; i++) {
+            // commit the root nodes of the subtrees
+            String node = "node_" + i;
+            mk.commit("/", "+\"" + node + "\":{}", null, "");
+            TreeCommitter committer = new TreeCommitter(mk, "/" + node,
+                    TREE_HEIGHT, TREE_BRANCHING_FACTOR, 1000);
+            committer.call();
+        }
         fixture.disposeMicroKernel(mk);
 
         // create workers
@@ -59,7 +64,7 @@ public class MicroKernelConcurrentReadTest extends MicroKernelPerformanceTest {
         }
     }
 
-    @PerformanceTest(nbWarmupRuns = 3, nbRuns = 3)
+    @PerformanceTest(nbWarmupRuns = 2, nbRuns = 3)
     public void test() throws Exception {
         // run them
         logger.debug("Starting concurrent worker execution");
@@ -69,7 +74,7 @@ public class MicroKernelConcurrentReadTest extends MicroKernelPerformanceTest {
             futures.add(executor.submit(worker));
         }
         executor.shutdown();
-        executor.awaitTermination(60, TimeUnit.SECONDS);
+        executor.awaitTermination(60, TimeUnit.MINUTES);
         // get return value of workers (this forces exceptions that might have
         // happened during execution to be re-thrown)
         for (Future<String> future : futures) {
@@ -101,7 +106,7 @@ public class MicroKernelConcurrentReadTest extends MicroKernelPerformanceTest {
                 // read the preferred subtree
                 int index = preferred;
                 if (TREE_BRANCHING_FACTOR > 1
-                        && random.nextDouble() >= PCT_LOCAL_UPDATES) {
+                        && random.nextDouble() >= PCT_LOCAL_READS) {
                     // read any other subtree
                     while (index == preferred) {
                         index = random.nextInt(TREE_BRANCHING_FACTOR);
@@ -109,11 +114,19 @@ public class MicroKernelConcurrentReadTest extends MicroKernelPerformanceTest {
                 }
                 // generate random path in that subtree
                 String path = generatePath(index);
-                // random depth: [0, 3[
-                int randomDepth = random.nextInt(3);
+                // random depth
+                int randomDepth = getRandomDepth();
                 mk.getNodes(path, null, randomDepth, 0, -1, null);
             }
             return null;
+        }
+
+        private int getRandomDepth() {
+            int depth = 0;
+            while (random.nextDouble() > 0.75) {
+                depth++;
+            }
+            return depth;
         }
 
         /**
